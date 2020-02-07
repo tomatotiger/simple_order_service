@@ -18,5 +18,5 @@ from django.urls import path, include
 import inventory
 
 urlpatterns = [
-    path('inventory', include('inventory.urls')),
+    path('inventory/', include('inventory.urls')),
 ]
