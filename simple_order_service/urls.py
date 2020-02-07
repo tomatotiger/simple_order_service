@@ -15,7 +15,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+import inventory
 
 urlpatterns = [
-    path(r'^api-auth/', include('rest_framework.urls'))
+    path('inventory', include('inventory.urls')),
 ]
