@@ -18,6 +18,8 @@ class Product(models.Model):
     description = models.TextField()
     price = models.IntegerField(help_text='cent')  # use as cent
     quantity_available = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class Order(models.Model):
@@ -27,3 +29,8 @@ class Order(models.Model):
     date_order_updated = models.DateTimeField(auto_now=True)
     order_status = models.CharField(max_length=50, choices=ORDER_STATUS)
 
+
+class OrderLog(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    action = models.CharField(max_length=50, choices=ORDER_STATUS)
+    created_at = models.DateTimeField(auto_now_add=True)
