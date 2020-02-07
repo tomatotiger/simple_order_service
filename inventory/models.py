@@ -34,21 +34,21 @@ class OrderManager(models.Manager):
             order.save()
             return order
 
-    def update_order(self, **kwargs):
+    def update_order(self, instance, **kwargs):
         with transaction.atomic():
             products = kwargs.pop('products')
-            order = self.get(pk=pk)
-            order.update(**kwargs)
+            self.filter(id=instance.id).update(**kwargs)
 
             #update products quantity
-            existing_products = order.products.all().values('id')
-            increase = [p for p in products if p not in existing_products]
-            decrease = [p for p in existing_products if p not in products]
-            order.products.set(products)
+            existing_products = instance.products.all().values_list('id', flat=True)
+            increase = [p for p in existing_products if p not in products]
+            decrease = [p.id for p in products if p not in existing_products]
+            instance.products.set(products)
             Product.objects.filter(id__in=increase).update(
                 quantity_available=F('quantity_available') + 1)
             Product.objects.filter(id__in=decrease).update(
                 quantity_available=F('quantity_available') - 1)
+            return self.get(pk=instance.id)
 
     def create_order(self, **kwargs):
         with transaction.atomic():

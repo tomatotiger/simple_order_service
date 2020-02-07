@@ -35,3 +35,40 @@ class ProductTest(APITestCase):
         self.assertEqual(
             Product.objects.get(id=self.p2.id).quantity_available,
             self.p2.quantity_available - 1)
+
+    def test_cancel(self):
+        order = Order.objects.create_order(customer_email_address='a@a.com',
+                                           products=[1])
+        self.assertEqual(
+            Product.objects.get(id=self.p1.id).quantity_available,
+            self.p1.quantity_available - 1)
+        response = self.client.put('/inventory/orders/%d/cancel/' % order.id)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            Product.objects.get(id=self.p1.id).quantity_available,
+            self.p1.quantity_available)
+
+    def test_update(self):
+        order = Order.objects.create_order(customer_email_address='a@a.com',
+                                           products=[1, 2])
+        self.assertEqual(
+            Product.objects.get(id=self.p1.id).quantity_available,
+            self.p1.quantity_available - 1)
+        self.assertEqual(
+            Product.objects.get(id=self.p2.id).quantity_available,
+            self.p2.quantity_available - 1)
+        response = self.client.put('/inventory/orders/%d/' % order.id, {
+            "customer_email_address": "hh@aa.com",
+            "products": [2]
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertQuerysetEqual(
+            Order.objects.get(pk=order.pk).products.values_list(
+                'id', flat=True),
+            ['2'])
+        self.assertEqual(
+            Product.objects.get(id=self.p1.id).quantity_available,
+            self.p1.quantity_available)
+        self.assertEqual(
+            Product.objects.get(id=self.p2.id).quantity_available,
+            self.p2.quantity_available - 1)

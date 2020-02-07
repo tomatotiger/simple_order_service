@@ -15,3 +15,6 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return Order.objects.create_order(**validated_data)
+
+    def update(self, instance, validated_data):
+        return Order.objects.update_order(instance, **validated_data)
