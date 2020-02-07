@@ -1,6 +1,6 @@
 from django.db import models
 from django.db import IntegrityError, transaction
-
+from django.db.models import F
 
 CREATED = 'created'
 CANCELED = 'canceled'
@@ -24,22 +24,38 @@ class Product(models.Model):
 
 
 class OrderManager(models.Manager):
-    def cancel_order(self):
+    def cancel_order(self, pk):
         with transaction.atomic():
-            self.order_status = CANCELED
-            for product in self.products.all():
+            order = self.get(pk=pk)
+            order.order_status = CANCELED
+            for product in order.products.all():
                 product.quantity_available += 1
                 product.save()
-            self.save()
+            order.save()
+            return order
+
+    def update_order(self, **kwargs):
+        with transaction.atomic():
+            products = kwargs.pop('products')
+            order = self.get(pk=pk)
+            order.update(**kwargs)
+
+            #update products quantity
+            existing_products = order.products.all().values('id')
+            increase = [p for p in products if p not in existing_products]
+            decrease = [p for p in existing_products if p not in products]
+            order.products.set(products)
+            Product.objects.filter(id__in=increase).update(
+                quantity_available=F('quantity_available') + 1)
+            Product.objects.filter(id__in=decrease).update(
+                quantity_available=F('quantity_available') - 1)
 
     def create_order(self, **kwargs):
         with transaction.atomic():
             products = kwargs.pop('products')
             order = self.create(**kwargs)
             order.products.set(products)
-            for product in order.products.all():
-                product.quantity_available -= 1
-                product.save()
+            order.products.update(quantity_available=F('quantity_available') - 1)
             return order
 
 
